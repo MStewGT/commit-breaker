@@ -49,7 +49,7 @@ export default function Home() {
       <header className={styles.header}>
         <h1 className={styles.title}>Commit Breaker</h1>
         <p className={styles.subtitle}>
-          Turn your GitHub contributions into a brick breaker game
+          Turn your GitHub contributions into a brick breaking game
         </p>
       </header>
 
