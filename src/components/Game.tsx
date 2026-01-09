@@ -37,6 +37,7 @@ export default function Game({
   const keysRef = useRef<Set<string>>(new Set())
   const touchRef = useRef<number | null>(null)
   const frameRef = useRef<number>(0)
+  const lastFrameTimeRef = useRef<number>(0)
 
   function initializeGame(): GameState {
     const bricks = createBricksFromContributions(
@@ -56,6 +57,22 @@ export default function Game({
   const resetGame = useCallback(() => {
     setGameState(initializeGame())
   }, [contributions, autoplay])
+
+  const restartGame = useCallback(() => {
+    const bricks = createBricksFromContributions(
+      contributions,
+      GAME_CONFIG.canvasWidth,
+      GAME_CONFIG.canvasHeight
+    )
+
+    setGameState({
+      status: 'playing',
+      score: 0,
+      bricks,
+      ball: createInitialBall(GAME_CONFIG.canvasWidth, GAME_CONFIG.canvasHeight),
+      paddle: createInitialPaddle(GAME_CONFIG.canvasWidth, GAME_CONFIG.canvasHeight),
+    })
+  }, [contributions])
 
   // Handle responsive sizing
   useEffect(() => {
@@ -82,8 +99,12 @@ export default function Game({
         e.preventDefault()
         keysRef.current.add(e.key)
 
-        if (e.key === ' ' && gameState.status === 'idle') {
-          setGameState((prev) => ({ ...prev, status: 'playing' }))
+        if (e.key === ' ') {
+          if (gameState.status === 'idle') {
+            setGameState((prev) => ({ ...prev, status: 'playing' }))
+          } else if (gameState.status === 'won' || gameState.status === 'lost') {
+            restartGame()
+          }
         }
       }
     }
@@ -109,6 +130,8 @@ export default function Game({
       e.preventDefault()
       if (gameState.status === 'idle') {
         setGameState((prev) => ({ ...prev, status: 'playing' }))
+      } else if (gameState.status === 'won' || gameState.status === 'lost') {
+        restartGame()
       }
       touchRef.current = e.touches[0].clientX
     }
@@ -175,6 +198,8 @@ export default function Game({
     const handleClick = () => {
       if (gameState.status === 'idle') {
         setGameState((prev) => ({ ...prev, status: 'playing' }))
+      } else if (gameState.status === 'won' || gameState.status === 'lost') {
+        restartGame()
       }
     }
 
@@ -191,17 +216,24 @@ export default function Game({
   useEffect(() => {
     if (gameState.status !== 'playing') return
 
-    const gameLoop = () => {
+    const gameLoop = (timestamp: number) => {
+      if (lastFrameTimeRef.current === 0) {
+        lastFrameTimeRef.current = timestamp
+      }
+
+      const deltaTime = (timestamp - lastFrameTimeRef.current) / 16.67 // Normalize to 60fps
+      lastFrameTimeRef.current = timestamp
+
       setGameState((prev) => {
         // Handle keyboard paddle movement
         let newPaddle = { ...prev.paddle }
         if (keysRef.current.has('ArrowLeft') || keysRef.current.has('a')) {
-          newPaddle.x = Math.max(0, newPaddle.x - GAME_CONFIG.paddleSpeed)
+          newPaddle.x = Math.max(0, newPaddle.x - GAME_CONFIG.paddleSpeed * deltaTime)
         }
         if (keysRef.current.has('ArrowRight') || keysRef.current.has('d')) {
           newPaddle.x = Math.min(
             GAME_CONFIG.canvasWidth - newPaddle.width,
-            newPaddle.x + GAME_CONFIG.paddleSpeed
+            newPaddle.x + GAME_CONFIG.paddleSpeed * deltaTime
           )
         }
 
@@ -210,7 +242,8 @@ export default function Game({
           newPaddle,
           prev.bricks,
           GAME_CONFIG.canvasWidth,
-          GAME_CONFIG.canvasHeight
+          GAME_CONFIG.canvasHeight,
+          deltaTime
         )
 
         const activeBricks = bricks.filter((b) => b.active)
@@ -229,8 +262,12 @@ export default function Game({
       frameRef.current = requestAnimationFrame(gameLoop)
     }
 
+    lastFrameTimeRef.current = 0
     frameRef.current = requestAnimationFrame(gameLoop)
-    return () => cancelAnimationFrame(frameRef.current)
+    return () => {
+      cancelAnimationFrame(frameRef.current)
+      lastFrameTimeRef.current = 0
+    }
   }, [gameState.status])
 
   // Render
@@ -339,8 +376,8 @@ export default function Game({
         </div>
       )}
 
-      {!embedded && (gameState.status === 'won' || gameState.status === 'lost') && (
-        <div className={styles.actions}>
+      {!embedded && (
+        <div className={styles.actions} style={{ visibility: (gameState.status === 'won' || gameState.status === 'lost') ? 'visible' : 'hidden' }}>
           <button onClick={resetGame} className={styles.button}>
             Play Again
           </button>

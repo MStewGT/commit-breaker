@@ -6,7 +6,7 @@ interface Props {
 }
 
 export default function EmbedCode({ username }: Props) {
-  const [copied, setCopied] = useState(false)
+  const [copied, setCopied] = useState<'share' | 'embed' | ''>('')
 
   const embedCode = `<iframe
   src="${window.location.origin}/embed?user=${username}"
@@ -18,11 +18,11 @@ export default function EmbedCode({ username }: Props) {
 
   const shareUrl = `${window.location.origin}/?user=${username}`
 
-  const copyToClipboard = async (text: string) => {
+  const copyToClipboard = async (text: string, type: 'share' | 'embed') => {
     try {
       await navigator.clipboard.writeText(text)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(type)
+      setTimeout(() => setCopied(''), 2000)
     } catch {
       // Fallback for older browsers
       const textarea = document.createElement('textarea')
@@ -31,8 +31,8 @@ export default function EmbedCode({ username }: Props) {
       textarea.select()
       document.execCommand('copy')
       document.body.removeChild(textarea)
-      setCopied(true)
-      setTimeout(() => setCopied(false), 2000)
+      setCopied(type)
+      setTimeout(() => setCopied(''), 2000)
     }
   }
 
@@ -43,10 +43,10 @@ export default function EmbedCode({ username }: Props) {
         <div className={styles.codeWrapper}>
           <code className={styles.code}>{shareUrl}</code>
           <button
-            onClick={() => copyToClipboard(shareUrl)}
+            onClick={() => copyToClipboard(shareUrl, 'share')}
             className={styles.copyButton}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied === 'share' ? 'Copied!' : 'Copy'}
           </button>
         </div>
       </div>
@@ -56,10 +56,10 @@ export default function EmbedCode({ username }: Props) {
         <div className={styles.codeWrapper}>
           <pre className={styles.pre}>{embedCode}</pre>
           <button
-            onClick={() => copyToClipboard(embedCode)}
+            onClick={() => copyToClipboard(embedCode, 'embed')}
             className={styles.copyButton}
           >
-            {copied ? 'Copied!' : 'Copy'}
+            {copied === 'embed' ? 'Copied!' : 'Copy'}
           </button>
         </div>
       </div>

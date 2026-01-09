@@ -110,7 +110,8 @@ export function updateBallPosition(
   paddle: Paddle,
   bricks: Brick[],
   canvasWidth: number,
-  canvasHeight: number
+  canvasHeight: number,
+  deltaTime: number = 1
 ): { ball: Ball; bricks: Brick[]; score: number; lost: boolean } {
   let newBall = { ...ball }
   let newBricks = [...bricks]
@@ -118,8 +119,8 @@ export function updateBallPosition(
   let lost = false
 
   // Move ball
-  newBall.x += newBall.dx
-  newBall.y += newBall.dy
+  newBall.x += newBall.dx * deltaTime
+  newBall.y += newBall.dy * deltaTime
 
   // Wall collisions
   if (newBall.x - newBall.radius <= 0 || newBall.x + newBall.radius >= canvasWidth) {
