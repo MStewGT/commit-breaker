@@ -221,7 +221,8 @@ export default function Game({
         lastFrameTimeRef.current = timestamp
       }
 
-      const deltaTime = (timestamp - lastFrameTimeRef.current) / 16.67 // Normalize to 60fps
+      const rawDelta = (timestamp - lastFrameTimeRef.current) / 16.67 // Normalize to 60fps
+      const deltaTime = Math.min(rawDelta, 2) // Cap deltaTime to prevent ball tunneling
       lastFrameTimeRef.current = timestamp
 
       setGameState((prev) => {
@@ -280,25 +281,31 @@ export default function Game({
 
     const scale = dimensions.width / GAME_CONFIG.canvasWidth
 
-    // Clear canvas
-    ctx.fillStyle = theme === 'light' ? '#ffffff' : '#1a1a1a'
-    ctx.fillRect(0, 0, dimensions.width, dimensions.height)
+    // Clear canvas with transparency to show glass morphism background
+    ctx.clearRect(0, 0, dimensions.width, dimensions.height)
 
     ctx.save()
     ctx.scale(scale, scale)
 
-    // Draw bricks
+    // Draw bricks (no shadows for performance)
     gameState.bricks.forEach((brick) => {
       if (!brick.active) return
 
-      ctx.fillStyle = getBrickColor(brick, theme)
+      const color = getBrickColor(brick, theme)
+
+      ctx.fillStyle = color
       ctx.beginPath()
-      ctx.roundRect(brick.x, brick.y, brick.width, brick.height, 2)
+      ctx.roundRect(brick.x, brick.y, brick.width, brick.height, 3)
       ctx.fill()
+
+      // Subtle highlight border for depth
+      ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+      ctx.lineWidth = 0.5
+      ctx.stroke()
     })
 
-    // Draw paddle
-    ctx.fillStyle = theme === 'light' ? '#1a1a1a' : '#f7f7f7'
+    // Draw paddle with glass effect
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.35)'
     ctx.beginPath()
     ctx.roundRect(
       gameState.paddle.x,
@@ -309,11 +316,19 @@ export default function Game({
     )
     ctx.fill()
 
-    // Draw ball
-    ctx.fillStyle = theme === 'light' ? '#2563eb' : '#60a5fa'
+    // Paddle border
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.7)'
+    ctx.lineWidth = 1.5
+    ctx.stroke()
+
+    // Draw ball with subtle glow
+    ctx.shadowColor = '#ffffff'
+    ctx.shadowBlur = 6
+    ctx.fillStyle = '#ffffff'
     ctx.beginPath()
     ctx.arc(gameState.ball.x, gameState.ball.y, gameState.ball.radius, 0, Math.PI * 2)
     ctx.fill()
+    ctx.shadowBlur = 0
 
     ctx.restore()
 
@@ -321,9 +336,9 @@ export default function Game({
     if (gameState.status === 'idle') {
       drawOverlay(ctx, 'Click or press Space to start', dimensions)
     } else if (gameState.status === 'won') {
-      drawOverlay(ctx, `You won! Score: ${gameState.score}`, dimensions)
+      drawOverlay(ctx, 'You won!', dimensions)
     } else if (gameState.status === 'lost') {
-      drawOverlay(ctx, `Game over! Score: ${gameState.score}`, dimensions)
+      drawOverlay(ctx, 'Game over!', dimensions)
     }
   }, [gameState, theme, dimensions])
 
@@ -332,14 +347,34 @@ export default function Game({
     text: string,
     dims: { width: number; height: number }
   ) {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.6)'
+    // Glass overlay effect
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.4)'
     ctx.fillRect(0, 0, dims.width, dims.height)
 
+    // Glass card in center
+    const cardWidth = Math.min(400, dims.width * 0.8)
+    const cardHeight = 80
+    const cardX = (dims.width - cardWidth) / 2
+    const cardY = (dims.height - cardHeight) / 2
+
+    ctx.fillStyle = 'rgba(255, 255, 255, 0.15)'
+    ctx.beginPath()
+    ctx.roundRect(cardX, cardY, cardWidth, cardHeight, 16)
+    ctx.fill()
+
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.3)'
+    ctx.lineWidth = 1
+    ctx.stroke()
+
+    // Text with shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.3)'
+    ctx.shadowBlur = 4
     ctx.fillStyle = '#ffffff'
     ctx.font = `bold ${Math.max(16, dims.width / 30)}px -apple-system, sans-serif`
     ctx.textAlign = 'center'
     ctx.textBaseline = 'middle'
     ctx.fillText(text, dims.width / 2, dims.height / 2)
+    ctx.shadowBlur = 0
   }
 
   const activeBricks = gameState.bricks.filter((b) => b.active).length

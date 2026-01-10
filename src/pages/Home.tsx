@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import UsernameInput from '../components/UsernameInput'
+import TrendingDevs from '../components/TrendingDevs'
 import Game from '../components/Game'
 import EmbedCode from '../components/EmbedCode'
 import { ContributionData } from '../types'
@@ -55,7 +56,10 @@ export default function Home() {
 
       <main className={styles.main}>
         {!contributions ? (
-          <UsernameInput onSubmit={handleSubmit} loading={loading} error={error} />
+          <>
+            <UsernameInput onSubmit={handleSubmit} loading={loading} error={error} />
+            <TrendingDevs onSelect={handleSubmit} disabled={loading} />
+          </>
         ) : (
           <>
             <Game
