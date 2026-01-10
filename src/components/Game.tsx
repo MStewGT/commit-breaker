@@ -412,10 +412,12 @@ export default function Game({
       )}
 
       {!embedded && (
-        <div className={styles.actions} style={{ visibility: (gameState.status === 'won' || gameState.status === 'lost') ? 'visible' : 'hidden' }}>
-          <button onClick={resetGame} className={styles.button}>
-            Play Again
-          </button>
+        <div className={styles.actions}>
+          {(gameState.status === 'won' || gameState.status === 'lost') && (
+            <button onClick={resetGame} className={styles.button}>
+              Play Again
+            </button>
+          )}
           {onReset && (
             <button onClick={onReset} className={styles.buttonSecondary}>
               New User

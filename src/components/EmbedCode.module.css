@@ -55,7 +55,7 @@
   padding: 12px 20px;
   font-size: 14px;
   font-weight: 500;
-  background: var(--accent-bg);
+  background: var(--glass-bg);
   color: var(--text-primary);
   border: 1px solid var(--glass-border);
   border-radius: var(--radius-sm);
@@ -66,7 +66,7 @@
 }
 
 .copyButton:hover {
-  background: var(--accent-bg-hover);
+  background: var(--accent-bg);
 }
 
 .copyButton:active {

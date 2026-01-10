@@ -94,16 +94,17 @@ export function checkBallBrickCollision(ball: Ball, brick: Brick): boolean {
 }
 
 export function getBrickColor(brick: Brick, _theme: 'light' | 'dark' = 'light'): string {
-  const intensity = brick.hits / brick.maxHits
+  // Map color directly to remaining hit points (not percentage)
+  // This creates a natural visual progression: Dark → Medium → Light → Destroyed
+  const colors = {
+    dark: '#22c55e',   // 3 hits remaining
+    medium: '#4ade80', // 2 hits remaining
+    light: '#86efac',  // 1 hit remaining
+  }
 
-  // Bright, vibrant greens that pop against the purple-pink gradient
-  // 4 colors for smoother progression on multi-hit bricks
-  const colors = ['#22c55e', '#4ade80', '#86efac', '#bbf7d0']
-
-  if (intensity > 0.75) return colors[0] // 76-100%
-  if (intensity > 0.50) return colors[1] // 51-75%
-  if (intensity > 0.25) return colors[2] // 26-50%
-  return colors[3] // 0-25%
+  if (brick.hits >= 3) return colors.dark
+  if (brick.hits === 2) return colors.medium
+  return colors.light // 1 hit
 }
 
 export function updateBallPosition(
